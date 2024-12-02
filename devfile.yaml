@@ -1,0 +1,67 @@
+schemaVersion: 2.2.0
+metadata:
+  name: python-nodejs-workspace
+  version: 1.0.0
+
+components:
+  - name: dev-tools
+    container:
+      image: registry.access.redhat.com/ubi8/python-39:latest
+      memoryLimit: 4G
+      mountSources: true
+      env:
+        - name: PYTHONPATH
+          value: ${PROJECT_SOURCE}
+        - name: PYTHONUNBUFFERED
+          value: '1'
+      endpoints:
+        - name: http-app
+          targetPort: 8080
+      volumeMounts:
+        - name: venv
+          path: /home/user/.venv
+
+  - name: python-pip
+    container:
+      image: registry.access.redhat.com/ubi8/python-39:latest
+      command: ['pip']
+      args: ['install', '--user', '-r', 'requirements.txt']
+      mountSources: true
+      
+  - name: nodejs
+    container:
+      image: registry.access.redhat.com/ubi8/nodejs-16:latest
+      memoryLimit: 512Mi
+      mountSources: true
+      endpoints:
+        - name: nodejs
+          targetPort: 3000
+
+  - name: venv
+    volume:
+      size: 1G
+
+commands:
+  - id: pip-install
+    exec:
+      component: python-pip
+      commandLine: pip install --user -r requirements.txt
+      workingDir: ${PROJECT_SOURCE}
+
+  - id: npm-install
+    exec:
+      component: nodejs
+      commandLine: npm install
+      workingDir: ${PROJECT_SOURCE}
+
+  - id: run-python
+    exec:
+      component: dev-tools
+      commandLine: python ${PROJECT_SOURCE}/app.py
+      workingDir: ${PROJECT_SOURCE}
+
+  - id: run-node
+    exec:
+      component: nodejs
+      commandLine: npm start
+      workingDir: ${PROJECT_SOURCE}
