@@ -4,64 +4,26 @@ metadata:
   version: 1.0.0
 
 components:
-  - name: dev-tools
+  - name: universal-developer-image
     container:
-      image: registry.access.redhat.com/ubi8/python-39:latest
-      memoryLimit: 4G
+      image: registry.redhat.io/devspaces/udi-rhel8@sha256:d14789c643a0127cfc868daeee0ff416a8df922fe2a7c716ebfc4577ff326fa2
+      memoryLimit: 4Gi
       mountSources: true
-      env:
-        - name: PYTHONPATH
-          value: ${PROJECT_SOURCE}
-        - name: PYTHONUNBUFFERED
-          value: '1'
       endpoints:
         - name: http-app
           targetPort: 8080
-      volumeMounts:
-        - name: venv
-          path: /home/user/.venv
-
-  - name: python-pip
-    container:
-      image: registry.access.redhat.com/ubi8/python-39:latest
-      command: ['pip']
-      args: ['install', '--user', '-r', 'requirements.txt']
-      mountSources: true
-      
-  - name: nodejs
-    container:
-      image: registry.access.redhat.com/ubi8/nodejs-16:latest
-      memoryLimit: 512Mi
-      mountSources: true
-      endpoints:
         - name: nodejs
           targetPort: 3000
-
-  - name: venv
-    volume:
-      size: 1G
 
 commands:
   - id: pip-install
     exec:
-      component: python-pip
+      component: universal-developer-image
       commandLine: pip install --user -r requirements.txt
       workingDir: ${PROJECT_SOURCE}
-
+      
   - id: npm-install
     exec:
-      component: nodejs
+      component: universal-developer-image
       commandLine: npm install
-      workingDir: ${PROJECT_SOURCE}
-
-  - id: run-python
-    exec:
-      component: dev-tools
-      commandLine: python ${PROJECT_SOURCE}/app.py
-      workingDir: ${PROJECT_SOURCE}
-
-  - id: run-node
-    exec:
-      component: nodejs
-      commandLine: npm start
       workingDir: ${PROJECT_SOURCE}
