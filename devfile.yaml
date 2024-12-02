@@ -3,39 +3,47 @@ metadata:
   name: python-nodejs-workspace
   version: 1.0.0
 
+attributes:
+  che-theia.eclipse.org/vscode-extensions:
+    - relative:extension/ms-python.python
+    - relative:extension/dbaeumer.vscode-eslint
+
 components:
-  - name: python-dev
+  - name: dev-container
     container:
       image: registry.access.redhat.com/ubi8/python-39:latest
       memoryLimit: 4Gi
       mountSources: true
+      sourceMapping: /projects
       endpoints:
         - name: http-app
           targetPort: 8080
           exposure: public
-      env:
-        - name: PYTHONPATH
-          value: ${PROJECT_SOURCE}
-
-  - name: nodejs-dev
-    container:
-      image: registry.access.redhat.com/ubi8/nodejs-16:latest
-      memoryLimit: 512Mi
-      mountSources: true
-      endpoints:
+          protocol: http
         - name: nodejs
           targetPort: 3000
           exposure: public
+          protocol: http
+      volumeMounts:
+        - name: m2
+          path: /home/user/.m2
+      env:
+        - name: PYTHONPATH
+          value: ${PROJECTS_ROOT}
+        - name: PYTHONUNBUFFERED
+          value: '1'
+        - name: PYTHONIOENCODING
+          value: 'UTF-8'
+        - name: NODE_VERSION
+          value: '16'
+
+  - name: m2
+    volume:
+      size: 1Gi
 
 commands:
-  - id: pip-install
-    exec:
-      component: python-dev
-      commandLine: pip install --user -r requirements.txt
-      workingDir: ${PROJECT_SOURCE}
-      
-  - id: npm-install
-    exec:
-      component: nodejs-dev
-      commandLine: npm install
-      workingDir: ${PROJECT_SOURCE}
+  - id: setup-env
+    apply:
+      component: dev-container
+      label: Setup Environment
+      workingDir: ${PROJECTS_ROOT}
