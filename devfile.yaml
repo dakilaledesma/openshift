@@ -4,26 +4,38 @@ metadata:
   version: 1.0.0
 
 components:
-  - name: universal-developer-image
+  - name: python-dev
     container:
-      image: registry.redhat.io/devspaces/udi-rhel8@sha256:d14789c643a0127cfc868daeee0ff416a8df922fe2a7c716ebfc4577ff326fa2
+      image: registry.access.redhat.com/ubi8/python-39:latest
       memoryLimit: 4Gi
       mountSources: true
       endpoints:
         - name: http-app
           targetPort: 8080
+          exposure: public
+      env:
+        - name: PYTHONPATH
+          value: ${PROJECT_SOURCE}
+
+  - name: nodejs-dev
+    container:
+      image: registry.access.redhat.com/ubi8/nodejs-16:latest
+      memoryLimit: 512Mi
+      mountSources: true
+      endpoints:
         - name: nodejs
           targetPort: 3000
+          exposure: public
 
 commands:
   - id: pip-install
     exec:
-      component: universal-developer-image
+      component: python-dev
       commandLine: pip install --user -r requirements.txt
       workingDir: ${PROJECT_SOURCE}
       
   - id: npm-install
     exec:
-      component: universal-developer-image
+      component: nodejs-dev
       commandLine: npm install
       workingDir: ${PROJECT_SOURCE}
